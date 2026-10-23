@@ -5,7 +5,7 @@ import requests
 
 from authlib.integrations.flask_client import OAuth
 from dotenv import load_dotenv
-from flask import Flask, redirect, render_template, session, url_for
+from flask import Flask, flash, redirect, render_template, request, session, url_for
 
 load_dotenv()
 
@@ -89,13 +89,40 @@ def url_usuario():
     return f"https://{AUTH0_DOMAIN}/api/v2/users/{quote(user_id, safe='')}"
 
 
-@app.route("/perfil")
+@app.route("/perfil", methods=["GET", "POST"])
 def perfil():
     if "user" not in session:
         return redirect(url_for("login"))
 
-    # Leer el usuario completo desde la Management API
     headers = {"Authorization": f"Bearer {token_management()}"}
+
+    if request.method == "POST":
+        # 1. Tomar los datos del formulario
+        cuerpo = {
+            "user_metadata": {
+                "tipo_documento": request.form.get("tipo_documento", ""),
+                "numero_documento": request.form.get("numero_documento", ""),
+                "direccion": request.form.get("direccion", ""),
+                "telefono": request.form.get("telefono", ""),
+            }
+        }
+        # 2. Enviarlos a Auth0 con PATCH
+        respuesta = requests.patch(
+            url_usuario(), json=cuerpo, headers=headers, timeout=10
+        )
+
+        # 3. Avisar el resultado al usuario
+        if respuesta.ok:
+            flash("Datos guardados correctamente en Auth0", "ok")
+        else:
+            flash(
+                f"Error al guardar ({respuesta.status_code}): {respuesta.text}", "error"
+            )
+
+        # 4. Recargar el perfil: el GET mostrará los datos nuevos
+        return redirect(url_for("perfil"))
+
+    # GET: leer el user_metadata actual para prellenar el formulario
     respuesta = requests.get(url_usuario(), headers=headers, timeout=10)
     respuesta.raise_for_status()
     meta = respuesta.json().get("user_metadata", {})
