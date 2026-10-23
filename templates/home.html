@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Taller Auth0 - ITM</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='estilos.css') }}">
+</head>
+<body>
+  <main class="card">
+    <span class="badge">Entorno: {{ entorno }}</span>
+    {% if user %}
+      <h1>Hola, {{ user.userinfo.name }}</h1>
+      <p>{{ user.userinfo.email }}</p>
+      <a class="btn" href="/perfil">Mi perfil</a>
+      <a class="btn secundario" href="/logout">Cerrar sesión</a>
+    {% else %}
+      <h1>Taller Auth0 — ITM</h1>
+      <p>Inicia sesión para continuar.</p>
+      <a class="btn" href="/login">Iniciar sesión</a>
+    {% endif %}
+  </main>
+</body>
+</html>
