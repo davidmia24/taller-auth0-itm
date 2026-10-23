@@ -1,5 +1,7 @@
 import os
-from urllib.parse import quote_plus, urlencode
+from urllib.parse import quote, quote_plus, urlencode
+
+import requests
 
 from authlib.integrations.flask_client import OAuth
 from dotenv import load_dotenv
@@ -64,6 +66,41 @@ def logout():
 
 
 # ---- Aquí irán las funciones y rutas de los Pasos 3 y 4 ----
+def token_management():
+    """Pide a Auth0 un token para usar la Management API (credenciales M2M)."""
+    respuesta = requests.post(
+        f"https://{AUTH0_DOMAIN}/oauth/token",
+        json={
+            "client_id": os.getenv("M2M_CLIENT_ID"),
+            "client_secret": os.getenv("M2M_CLIENT_SECRET"),
+            "audience": f"https://{AUTH0_DOMAIN}/api/v2/",
+            "grant_type": "client_credentials",
+        },
+        timeout=10,
+    )
+    respuesta.raise_for_status()
+    return respuesta.json()["access_token"]
+
+
+def url_usuario():
+    """URL del usuario logueado en la Management API."""
+    user_id = session["user"]["userinfo"]["sub"]  # ej: auth0|65ab...
+    # quote() codifica el carácter | para que la URL sea válida
+    return f"https://{AUTH0_DOMAIN}/api/v2/users/{quote(user_id, safe='')}"
+
+
+@app.route("/perfil")
+def perfil():
+    if "user" not in session:
+        return redirect(url_for("login"))
+
+    # Leer el usuario completo desde la Management API
+    headers = {"Authorization": f"Bearer {token_management()}"}
+    respuesta = requests.get(url_usuario(), headers=headers, timeout=10)
+    respuesta.raise_for_status()
+    meta = respuesta.json().get("user_metadata", {})
+
+    return render_template("perfil.html", user=session["user"]["userinfo"], meta=meta)
 
 
 if __name__ == "__main__":
