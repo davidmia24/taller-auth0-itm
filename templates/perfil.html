@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Mi perfil - Taller Auth0</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='estilos.css') }}">
+</head>
+<body>
+  <main class="card">
+    <span class="badge">Entorno: {{ entorno }}</span>
+    <h1>Mis datos</h1>
+    <p>{{ user.email }}</p>
+
+    {% with mensajes = get_flashed_messages(with_categories=true) %}
+      {% for categoria, mensaje in mensajes %}
+        <p class="alerta {{ categoria }}">{{ mensaje }}</p>
+      {% endfor %}
+    {% endwith %}
+
+    <form method="post" action="/perfil">
+      <label>Tipo de documento
+        <select name="tipo_documento" required>
+          <option value="">Selecciona...</option>
+          {% for op in ["CC", "TI", "CE", "Pasaporte"] %}
+            <option value="{{ op }}" {% if meta.get('tipo_documento') == op %}selected{% endif %}>{{ op }}</option>
+          {% endfor %}
+        </select>
+      </label>
+
+      <label>Número de documento
+        <input name="numero_documento" value="{{ meta.get('numero_documento', '') }}" required>
+      </label>
+
+      <label>Dirección
+        <input name="direccion" value="{{ meta.get('direccion', '') }}">
+      </label>
+
+      <label>Teléfono
+        <input name="telefono" type="tel" value="{{ meta.get('telefono', '') }}">
+      </label>
+
+      <button class="btn" type="submit">Guardar</button>
+      <a class="btn secundario" href="/">Volver</a>
+    </form>
+  </main>
+</body>
+</html>
